@@ -66,24 +66,13 @@ RUN git clone https://github.com/matter-labs/zksync-era.git . && \
 RUN echo '. "$NVM_DIR/nvm.sh"' >> ~/.bashrc && \
     echo '. ~/.cargo/env' >> ~/.bashrc
 
-# Add a script to handle configurable zkstack ecosystem creation
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Copy and set permissions for scripts
+COPY *.sh /script/
+RUN chmod +x /script/*.sh
 
-# Default environment variables for zkstack ecosystem creation
-ENV ECOSYSTEM_NAME=provi
-ENV CHAIN_NAME=proviNet
-ENV SET_AS_DEFAULT=true
-ENV WALLET_CREATION=random
-ENV PROVER_MODE=gpu
-ENV CHAIN_ID=271
-ENV L1_NETWORK=sepolia
-ENV L1_BATCH_COMMIT_DATA_GENERATOR_MODE=rollup
-ENV LINK_TO_CODE=/zksync
-ENV BASE_TOKEN_ADDRESS="0x0000000000000000000000000000000000000001"
-ENV BASE_TOKEN_PRICE_NOMINATOR=1
-ENV BASE_TOKEN_PRICE_DENOMINATOR=1
-ENV START_CONTAINERS=false
-
-# Entrypoint script
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "\
+    chmod +x /script/*.sh && \
+    source /script/1_init_environment.sh && \
+    /script/2_faucet.sh && \
+    /script/3_create_ecosystem.sh && \
+    /script/4_init_ecosystem.sh"]
