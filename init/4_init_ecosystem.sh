@@ -11,7 +11,8 @@ ZKSTACK_INIT_COMMAND="zkstack ecosystem init \
     --observability=${OBSERVABILITY} \
     --deploy-paymaster=${DEPLOY_PAYMASTER} \
     --server-db-url=${SERVER_DB_URL} \
-    --server-db-name=${SERVER_DB_NAME}"
+    --server-db-name=${SERVER_DB_NAME} --ignore-prerequisites --verbose"
 
-cd ${ECOSYSTEM_NAME}
-exec $ZKSTACK_INT_COMMAND
+cd /${ECOSYSTEM_NAME}
+
+exec $ZKSTACK_INIT_COMMAND

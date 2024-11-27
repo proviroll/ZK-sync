@@ -20,6 +20,10 @@ reqenv "L1_FAUCET_PRIVATE_KEY"
 
 echo "[1/4] : init environment variables"
 
+if [ -z "${PRIORITY_GAS_PRICE:-}" ]; then
+	export PRIORITY_GAS_PRICE=10000
+fi
+
 if [ -z "${SET_AS_DEFAULT:-}" ]; then
 	export SET_AS_DEFAULT=true
 fi
@@ -37,11 +41,11 @@ if [ -z "${BASE_TOKEN_ADDRESS:-}" ]; then
 fi
 
 if [ -z "${BASE_TOKEN_PRICE_NOMINATOR:-}" ]; then
-	export BASE_TOKEN_ADDRESS=1
+	export BASE_TOKEN_PRICE_NOMINATOR=1
 fi
 
 if [ -z "${BASE_TOKEN_PRICE_DENOMINATOR:-}" ]; then
-	export BASE_TOKEN_ADDRESS=1
+	export BASE_TOKEN_PRICE_DENOMINATOR=1
 fi
 
 if [ -z "${START_CONTAINERS:-}" ]; then
@@ -73,9 +77,9 @@ if [ -z "${DEPLOY_PAYMASTER:-}" ]; then
 fi
 
 if [ -z "${SERVER_DB_URL:-}" ]; then
-	export SERVER_DB_URL=postgres://postgres:notsecurepassword@localhost:5432
+	export SERVER_DB_URL=postgres://postgres:mysecretpassword@localhost:5432
 fi
 
 if [ -z "${SERVER_DB_NAME:-}" ]; then
-	export SERVER_DB_NAME=zksync_server_$L1_NETWORK
+	export SERVER_DB_NAME=zksync_server_${L1_NETWORK}_${ECOSYSTEM_NAME}
 fi

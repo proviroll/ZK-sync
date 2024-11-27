@@ -16,10 +16,11 @@ ZKSTACK_COMMAND="zkstack ecosystem create \
     --base-token-address=${BASE_TOKEN_ADDRESS} \
     --base-token-price-nominator=${BASE_TOKEN_PRICE_NOMINATOR} \
     --base-token-price-denominator=${BASE_TOKEN_PRICE_DENOMINATOR} \
+    --evm-emulator=false \
     --start-containers=${START_CONTAINERS}"
 
 # Moving to the project's root
-cd ..
-ZKSTACK_COMMAND+=" --wallet-path=${WALLET_PATH} --wallet-creation=in-file"
+ZKSTACK_COMMAND+=" --wallet-path=${WALLET_PATH} --wallet-creation=in-file --ignore-prerequisites"
 
+# echo "$ZKSTACK_COMMAND"
 exec $ZKSTACK_COMMAND

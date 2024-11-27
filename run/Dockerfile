@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     software-properties-common \
     git \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure git for HTTPS instead of SSH
@@ -36,13 +37,6 @@ RUN curl -o-  | bash && \
     nvm install $NODE_VERSION && \
     npm install -g yarn && \
     yarn set version 1.22.19
-
-# Install Docker (note: this is for docker-in-docker scenarios, might not be needed)
-RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable" && \
-    apt-get update && \
-    apt-get install -y docker-ce && \
-    rm -rf /var/lib/apt/lists/*
 
 # Install Cargo tools
 ENV PATH="/root/.cargo/bin:${PATH}"
