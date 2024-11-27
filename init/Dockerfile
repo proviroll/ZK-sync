@@ -31,7 +31,7 @@ RUN git config --global url."https://github.com/".insteadOf git@github.com: && \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # Install NVM, Node.js, and Yarn
-RUN curl -o-  | bash && \
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash && \
     . $NVM_DIR/nvm.sh && \
     nvm install $NODE_VERSION && \
     npm install -g yarn && \
