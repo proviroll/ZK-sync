@@ -44,12 +44,24 @@ RUN . ~/.cargo/env && \
     cargo install cargo-nextest && \
     cargo install sqlx-cli --version 0.8.1
 
+    # Install Foundry
+RUN curl -L https://foundry.paradigm.xyz | bash && \
+/root/.foundry/bin/foundryup
+ENV PATH="/root/.foundry/bin:${PATH}"
+
 # Install Foundry ZKsync
 RUN curl -L https://raw.githubusercontent.com/matter-labs/foundry-zksync/main/install-foundry-zksync | bash && \
     ~/.foundry/bin/foundryup-zksync
 
 # Set environment variable for non-CUDA setup
 ENV ZKSYNC_USE_CUDA_STUBS=true
+
+WORKDIR /zksync
+RUN git clone https://github.com/matter-labs/zksync-era.git . && \
+    git submodule update --init --recursive
+
+# Install the zkstack tool from the repository
+RUN cargo install --git https://github.com/matter-labs/zksync-era/ --locked zkstack --force
 
 # Add shell initialization for nvm and rust
 RUN echo '. "$NVM_DIR/nvm.sh"' >> ~/.bashrc && \
