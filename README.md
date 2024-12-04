@@ -11,9 +11,7 @@ docker build -t zkstack-ecosystem
 Note: Please take care of the wallets( creation and topping up) before proceeding to run the network.
 
 ```bash
-docker run -v /local/path/to/wallets.yaml:/container/path/wallets.yaml \
-           -e wallet_path=/container/path/wallets.yaml \
-           zkstack-ecosystem
+docker run --network=host --name my_container4 --env-file .env -v /root/tests/zk-sync-init/wallets.yaml:/scripts/wallets.yaml -v zksync-app-data:/app  zk-sync-init
 ```
 ### Available Environment Variables
 # Default environment variables for zkstack ecosystem creation

@@ -32,7 +32,7 @@ RUN git config --global url."https://github.com/".insteadOf git@github.com: && \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # Install NVM, Node.js, and Yarn
-RUN curl -o-  | bash && \
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash && \
     . $NVM_DIR/nvm.sh && \
     nvm install $NODE_VERSION && \
     npm install -g yarn && \
@@ -44,7 +44,9 @@ RUN . ~/.cargo/env && \
     cargo install cargo-nextest && \
     cargo install sqlx-cli --version 0.8.1
 
-    # Install Foundry
+SHELL ["/bin/bash", "-c"]
+
+# Install Foundry
 RUN curl -L https://foundry.paradigm.xyz | bash && \
 /root/.foundry/bin/foundryup
 ENV PATH="/root/.foundry/bin:${PATH}"
@@ -67,11 +69,11 @@ RUN cargo install --git https://github.com/matter-labs/zksync-era/ --locked zkst
 RUN echo '. "$NVM_DIR/nvm.sh"' >> ~/.bashrc && \
     echo '. ~/.cargo/env' >> ~/.bashrc
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Copy and set permissions for scripts
 COPY *.sh /script/
 RUN chmod +x /script/*.sh
 
-ENTRYPOINT ["/bin/bash", "-c", "\
-    chmod +x /script/*.sh && \
-    source /script/1_init_environment.sh && \
-    /script/2_run_ecosystem.sh"]
+ENTRYPOINT ["/entrypoint.sh"]

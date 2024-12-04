@@ -50,7 +50,6 @@ RUN . ~/.cargo/env && \
 RUN wget https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64 -O /usr/bin/yq && \
     chmod +x /usr/bin/yq
 
-# Use bash explicitly for this command
 SHELL ["/bin/bash", "-c"]
 
 # Install Foundry
