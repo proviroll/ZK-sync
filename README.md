@@ -12,7 +12,10 @@ Note: Please take care of the wallets( creation and topping up) before proceedin
 
 ```bash
 docker run --network=host --name my_container4 --env-file .env -v /root/tests/zk-sync-init/wallets.yaml:/scripts/wallets.yaml -v zksync-app-data:/app  zk-sync-init
+
+docker run --network=host  --volumes-from=my_container4 --name my_run_container --env-file .env   zk-sync-run
 ```
+
 ### Available Environment Variables
 # Default environment variables for zkstack ecosystem creation
 Default environment variables for zkstack ecosystem creation:

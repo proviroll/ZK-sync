@@ -27,4 +27,4 @@ if ! /script/3_create_ecosystem.sh; then
     exit 1
 fi
 
-# /script/4_init_ecosystem.sh
+/script/4_init_ecosystem.sh

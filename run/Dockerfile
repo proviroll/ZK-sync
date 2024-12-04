@@ -1,5 +1,5 @@
 # Use Ubuntu as base image
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 # Prevent timezone prompt
 ENV DEBIAN_FRONTEND=noninteractive
@@ -21,6 +21,8 @@ RUN apt-get update && apt-get install -y \
     curl \
     software-properties-common \
     git \
+    wget \
+    bc \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
