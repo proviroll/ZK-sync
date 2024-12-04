@@ -13,6 +13,6 @@ ZKSTACK_INIT_COMMAND="zkstack ecosystem init \
     --server-db-url=${SERVER_DB_URL} \
     --server-db-name=${SERVER_DB_NAME} --ignore-prerequisites --verbose"
 
-cd /${ECOSYSTEM_NAME}
+cd ${ECOSYSTEM_NAME}
 
 exec $ZKSTACK_INIT_COMMAND

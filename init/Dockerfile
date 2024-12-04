@@ -65,8 +65,8 @@ RUN curl -L https://raw.githubusercontent.com/matter-labs/foundry-zksync/main/in
 # Set environment variable for non-CUDA setup
 ENV ZKSYNC_USE_CUDA_STUBS=true
 
-WORKDIR /zksync
-RUN git clone https://github.com/matter-labs/zksync-era.git . && \
+WORKDIR /app
+RUN git clone https://github.com/matter-labs/zksync-era.git zksync && cd zksync && \
     git submodule update --init --recursive
 
 # Install the zkstack tool from the repository

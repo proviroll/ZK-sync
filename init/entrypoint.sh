@@ -18,7 +18,7 @@ chmod +x /script/*.sh
 source /script/1_init_environment.sh
 /script/2_faucet.sh
 
-cd /
+cd /app
 
 # Add error handling for the failing script
 if ! /script/3_create_ecosystem.sh; then
@@ -27,4 +27,4 @@ if ! /script/3_create_ecosystem.sh; then
     exit 1
 fi
 
-/script/4_init_ecosystem.sh
+# /script/4_init_ecosystem.sh
