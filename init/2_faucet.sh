@@ -1,9 +1,23 @@
 #!/bin/bash
 set -eu
 
+echo "[2/4] : faucet eth to environment accounts"
+
 # .env
 FAUCET_PRIVATE_KEY="$L1_FAUCET_PRIVATE_KEY"
 FAUCET_ADDRESS="$L1_FAUCET_ADDRESS"
+
+# Check if wallets.yaml exists, if not generate it
+if [ ! -f "$WALLET_PATH" ]; then
+    echo "wallets.yaml not found. Running generate_wallets.sh..."
+    /script/generate_wallets.sh
+    echo "Wallets generated and saved to $WALLET_PATH"
+
+    # Output the contents of the newly created wallets.yaml
+    echo -e "\nContents of newly generated wallets.yaml:"
+    cat "$WALLET_PATH"
+    echo -e "\n"
+fi
 
 # Function to parse YAML and get address
 get_address() {
@@ -11,7 +25,6 @@ get_address() {
     yq eval ".$role.address" "$WALLET_PATH"
 }
 
-echo "[2/4] : faucet eth to environment accounts"
 send_eth() {
   receiver_address="$1"
   amount_to_eth="$2"
@@ -22,6 +35,8 @@ send_eth() {
   if [ "$(echo "$receiver_balance >= $amount_to_send" | bc)" -eq 1 ]; then
     echo "$receiver_address already has enough balance"
   else
+    echo "$receiver_address doesn't have enough balance, let's top it up..."
+
     # if FAUCET_PRIVATE_KEY is not set, error
     if [ -z "$FAUCET_PRIVATE_KEY" ]; then
       echo "FAUCET_PRIVATE_KEY is not set"

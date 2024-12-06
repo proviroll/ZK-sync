@@ -18,7 +18,7 @@ docker build -t zk-sync-run ./run
 docker run --network=host \
     --name my_container_init \
     --env-file .env \
-    -v /path/to/wallets.yaml:/scripts/wallets.yaml \
+    -v /path/to/wallets.yaml:/script/wallets.yaml \ # Passing custom wallets.yaml is optional
     -v zksync-app-data:/app \
     zk-sync-init
 
@@ -38,7 +38,7 @@ Create a `.env` file with the following configuration:
 ```env
 ECOSYSTEM_NAME=provi
 CHAIN_NAME=proviTestnet
-WALLET_PATH=/scripts/wallets.yaml
+WALLET_PATH=/script/wallets.yaml
 PROVER_MODE=gpu
 L1_NETWORK=sepolia
 LINK_TO_CODE=/app/zksync
