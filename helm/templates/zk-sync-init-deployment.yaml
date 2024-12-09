@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zk-sync-init
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zk-sync-init
+  template:
+    metadata:
+      labels:
+        app: zk-sync-init
+    spec:
+      containers:
+      - name: zk-sync-init
+        image: your-registry/zk-sync-init:latest
+        envFrom:
+        - configMapRef:
+            name: zksync-config
+        - secretRef:
+            name: zksync-secrets
+        volumeMounts:
+        - name: zksync-app-data
+          mountPath: /app
+      volumes:
+      - name: shared-data
+        persistentVolumeClaim:
+          claimName: zksync-app-data
