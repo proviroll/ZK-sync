@@ -9,4 +9,4 @@ spec:
     - protocol: TCP
       port: 3052
       targetPort: 3052
-  type: ClusterIP
+  type: {{ .Values.service.type }}

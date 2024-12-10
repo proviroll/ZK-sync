@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: zk-sync-run
+  name: {{ .Release.Name }}-run
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: zk-sync-run
@@ -14,7 +14,11 @@ spec:
     spec:
       containers:
       - name: zk-sync-run
-        image: your-registry/zk-sync-run:latest
+        image: "zk-sync-run:{{ .Values.image.runTag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 3052
+          name: http
         volumeMounts:
         - name: zksync-app-data
           mountPath: /app

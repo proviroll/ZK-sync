@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: zk-sync-init
+  name: {{ .Release.Name }}-init
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: zk-sync-init
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: zk-sync-init
-        image: your-registry/zk-sync-init:latest
+        image: "zk-sync-init:{{ .Values.image.initTag }}"
         envFrom:
         - configMapRef:
             name: zksync-config
