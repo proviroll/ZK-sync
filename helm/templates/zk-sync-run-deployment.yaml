@@ -19,10 +19,13 @@ spec:
         ports:
         - containerPort: 3052
           name: http
+        env:
+        - name: SERVER_DB_URL
+          value: "postgres://{{ .Values.postgresql.username }}:$(POSTGRES_PASSWORD)@{{ .Release.Name }}-postgres:{{ .Values.postgresql.port }}/{{ .Values.postgresql.database }}"
         volumeMounts:
         - name: zksync-app-data
           mountPath: /app
       volumes:
-      - name: shared-data
+      - name: zksync-app-data
         persistentVolumeClaim:
           claimName: zksync-app-data
