@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: zk-sync-run
-        image: "zk-sync-run:{{ .Values.image.runTag }}"
+        image: "proviroll/zk-sync-run:{{ .Values.image.runTag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - containerPort: 3052

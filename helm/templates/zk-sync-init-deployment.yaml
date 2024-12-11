@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: zk-sync-init
-        image: "zk-sync-init:{{ .Values.image.initTag }}"
+        image: "proviroll/zk-sync-init:{{ .Values.image.initTag }}"
         envFrom:
         - configMapRef:
             name: zksync-config

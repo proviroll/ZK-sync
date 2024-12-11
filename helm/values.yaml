@@ -7,9 +7,9 @@ replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
-  repository: zk-sync-init
-  initTag: latest
-  runTag: latest
+  repository: proviroll/zk-sync-init
+  initTag: alpha
+  runTag: alpha
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
