@@ -19,6 +19,11 @@ spec:
         ports:
         - containerPort: 3052
           name: http
+        envFrom:
+        - configMapRef:
+            name: zksync-config
+        - secretRef:
+            name: zksync-secrets
         env:
         - name: SERVER_DB_URL
           value: "postgres://{{ .Values.postgresql.username }}:$(POSTGRES_PASSWORD)@{{ .Release.Name }}-postgres:{{ .Values.postgresql.port }}/{{ .Values.postgresql.database }}"
