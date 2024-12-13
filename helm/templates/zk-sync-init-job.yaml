@@ -1,12 +1,8 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: {{ .Release.Name }}-init
 spec:
-  replicas: {{ .Values.replicaCount }}
-  selector:
-    matchLabels:
-      app: zk-sync-init
   template:
     metadata:
       labels:
@@ -30,3 +26,4 @@ spec:
       - name: zksync-app-data
         persistentVolumeClaim:
           claimName: zksync-app-data
+      restartPolicy: Never

@@ -12,6 +12,19 @@ spec:
       labels:
         app: zk-sync-run
     spec:
+      {{- if (include "zksync.waitForInit" .) }}
+      initContainers:
+      - name: wait-for-init
+        image: bitnami/kubectl
+        command:
+        - 'sh'
+        - '-c'
+        - |
+          until kubectl get job {{ .Release.Name }}-init -o jsonpath='{.status.succeeded}' | grep 1; do
+            echo "Waiting for init job to complete..."
+            sleep 10
+          done
+      {{- end }}
       containers:
       - name: zk-sync-run
         image: "proviroll/zk-sync-run:{{ .Values.image.runTag }}"

@@ -154,3 +154,7 @@ postgresql:
 secrets:
   l1FaucetAddress: "0xd7294109645923C71DB7a683032877483830CCDF"
   l1FaucetPrivateKey: "4ccbc18b99915893004ced2d90f791ca66ad789d3ac4143199623fa5d53c73ba"
+
+run:
+  waitForInit: true  # Set to true to enable waiting for init job
+  timeoutSeconds: 3600
