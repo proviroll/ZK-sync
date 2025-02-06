@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zksync-config
+data:
+  ECOSYSTEM_NAME: {{ .Values.config.ecosystemName | quote }}
+  CHAIN_NAME: {{ .Values.config.chainName | quote }}
+  WALLET_PATH: {{ .Values.config.walletPath | quote }}
+  PROVER_MODE: {{ .Values.config.proverMode | quote }}
+  L1_NETWORK: {{ .Values.config.l1Network | quote }}
+  LINK_TO_CODE: {{ .Values.config.linkToCode | quote }}

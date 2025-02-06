@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-init
+spec:
+  template:
+    metadata:
+      labels:
+        app: zk-sync-init
+    spec:
+      containers:
+      - name: zk-sync-init
+        image: "proviroll/zk-sync-init:{{ .Values.image.initTag }}"
+        envFrom:
+        - configMapRef:
+            name: zksync-config
+        - secretRef:
+            name: zksync-secrets
+        env:
+        - name: SERVER_DB_URL
+          value: "postgres://{{ .Values.postgresql.username }}:$(POSTGRES_PASSWORD)@{{ .Release.Name }}-postgres:{{ .Values.postgresql.port }}/{{ .Values.postgresql.database }}"
+        volumeMounts:
+        - name: zksync-app-data
+          mountPath: /app
+      volumes:
+      - name: zksync-app-data
+        persistentVolumeClaim:
+          claimName: zksync-app-data
+      restartPolicy: Never

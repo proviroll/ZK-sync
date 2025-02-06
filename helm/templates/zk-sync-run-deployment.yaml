@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-run
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: zk-sync-run
+  template:
+    metadata:
+      labels:
+        app: zk-sync-run
+    spec:
+      {{- if (include "zksync.waitForInit" .) }}
+      initContainers:
+      - name: wait-for-init
+        image: bitnami/kubectl
+        command:
+        - 'sh'
+        - '-c'
+        - |
+          until kubectl get job {{ .Release.Name }}-init -o jsonpath='{.status.succeeded}' | grep 1; do
+            echo "Waiting for init job to complete..."
+            sleep 10
+          done
+      {{- end }}
+      containers:
+      - name: zk-sync-run
+        image: "proviroll/zk-sync-run:{{ .Values.image.runTag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 3052
+          name: http
+        envFrom:
+        - configMapRef:
+            name: zksync-config
+        - secretRef:
+            name: zksync-secrets
+        env:
+        - name: SERVER_DB_URL
+          value: "postgres://{{ .Values.postgresql.username }}:$(POSTGRES_PASSWORD)@{{ .Release.Name }}-postgres:{{ .Values.postgresql.port }}/{{ .Values.postgresql.database }}"
+        volumeMounts:
+        - name: zksync-app-data
+          mountPath: /app
+      volumes:
+      - name: zksync-app-data
+        persistentVolumeClaim:
+          claimName: zksync-app-data

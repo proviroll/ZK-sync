@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:latest
+        ports:
+        - containerPort: {{ .Values.postgresql.port }}
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: zksync-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_USER
+          value: {{ .Values.postgresql.username }}
+        - name: SERVER_DB_NAME
+          value: {{ .Values.postgresql.database }}
+        resources:
+          {{- toYaml .Values.postgresql.resources | nindent 10 }}
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: {{ .Values.postgresql.port }}
+      targetPort: {{ .Values.postgresql.port }}
+  type: ClusterIP
