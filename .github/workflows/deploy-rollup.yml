@@ -17,11 +17,6 @@ on:
         required: true
         type: string
         default: 'proviTestnet'
-      chain_id:
-        description: 'Chain ID'
-        required: true
-        type: string
-        default: '271'
       l1_network:
         description: 'L1 Network'
         required: true
@@ -83,14 +78,12 @@ jobs:
           ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && cat > .env << EOL
           ECOSYSTEM_NAME=${{ inputs.ecosystem_name }}
           CHAIN_NAME=${{ inputs.chain_name }}
-          CHAIN_ID=${{ inputs.chain_id }}
           WALLET_PATH=/script/wallets.yaml
           PROVER_MODE=${{ inputs.prover_mode }}
           L1_NETWORK=${{ inputs.l1_network }}
           LINK_TO_CODE=/app/zksync
           L1_FAUCET_ADDRESS=${{ secrets.L1_FAUCET_ADDRESS }}
           L1_FAUCET_PRIVATE_KEY=${{ secrets.L1_FAUCET_PRIVATE_KEY }}
-          L1_RPC_URL=${{ secrets.L1_RPC_URL }}
           EOL"
           
           # Build and run containers
