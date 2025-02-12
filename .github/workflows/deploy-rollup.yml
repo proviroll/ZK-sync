@@ -5,6 +5,11 @@ permissions:
   pull-requests: write
 
 on:
+  push:
+    branches:
+      - main
+      - feat/*
+
   workflow_dispatch:
     inputs:
       ecosystem_name:
