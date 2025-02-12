@@ -53,7 +53,7 @@ if [ -z "${START_CONTAINERS:-}" ]; then
 fi
 
 if [ -z "${FAUCET_AMOUNT_ETH:-}" ]; then
-	export FAUCET_AMOUNT_ETH=5
+	export FAUCET_AMOUNT_ETH=0.1
 fi
 
 if [ -z "${DEPLOY_ERC20:-}" ]; then
