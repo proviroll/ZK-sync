@@ -37,7 +37,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -70,10 +70,10 @@ jobs:
         run: |
           # Create deployment directory
           ssh $USERNAME@$HOST "mkdir -p ~/zksync-deploy/${{ env.BRANCH_NAME }}"
-          
+
           # Copy files to host
           scp -r ./* $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/
-          
+
           # Create .env file on the host
           ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && cat > .env << EOL
           ECOSYSTEM_NAME=${{ inputs.ecosystem_name }}
@@ -85,16 +85,25 @@ jobs:
           L1_FAUCET_ADDRESS=${{ secrets.L1_FAUCET_ADDRESS }}
           L1_FAUCET_PRIVATE_KEY=${{ secrets.L1_FAUCET_PRIVATE_KEY }}
           EOL"
-          
-          # Build and run containers
+
+          # Run init container with different error handling
           ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
-            docker build -t zk-sync-init ./init && \
-            docker build -t zk-sync-run ./run && \
-            docker run --network=host \
-              --name ${{ inputs.ecosystem_name }}_init \
+            docker run --name ${{ inputs.ecosystem_name }}_init \
               --env-file .env \
               -v zksync-app-data:/app \
-              zk-sync-init && \
+              zk-sync-init || \
+            docker cp ${{ inputs.ecosystem_name }}_init:/tmp/report-*.toml ./crash-report.toml"
+
+          # If the container failed, fetch and display the crash report
+          if [ $? -ne 0 ]; then
+            echo "Container failed. Retrieving crash report..."
+            scp $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/crash-report.toml ./
+            cat crash-report.toml
+            exit 1
+          fi
+
+          # Run the run container
+          ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
             docker run -d --network=host \
               --volumes-from=${{ inputs.ecosystem_name }}_init \
               --name ${{ inputs.ecosystem_name }}_run \
