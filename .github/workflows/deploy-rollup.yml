@@ -74,6 +74,11 @@ jobs:
           # Copy files to host
           scp -r ./* $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/
 
+          # Build Docker images
+          ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
+            docker build -t zk-sync-init ./init && \
+            docker build -t zk-sync-run ./run"
+
           # Create .env file on the host
           ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && cat > .env << EOL
           ECOSYSTEM_NAME=${{ inputs.ecosystem_name }}
