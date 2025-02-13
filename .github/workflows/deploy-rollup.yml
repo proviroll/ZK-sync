@@ -117,14 +117,18 @@ jobs:
           HOST: ${{ secrets.DEPLOY_HOST }}
           USERNAME: ${{ secrets.DEPLOY_USERNAME }}
         run: |
+          # Create artifacts directories on both local and remote
           mkdir -p artifacts
           ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
-            cp *.log artifacts/ 2>/dev/null || true; \
-            cp *.toml artifacts/ 2>/dev/null || true; \
-            cp crash-report.toml artifacts/ 2>/dev/null || true; \
-            docker logs ${{ inputs.ecosystem_name }}_init > artifacts/init_container.log 2>&1 || true; \
-            docker logs ${{ inputs.ecosystem_name }}_run > artifacts/run_container.log 2>&1 || true"
-          scp -r $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/ || true
+            mkdir -p artifacts && \
+            cp *.log artifacts/ 2>/dev/null || true && \
+            cp *.toml artifacts/ 2>/dev/null || true && \
+            docker logs ${{ inputs.ecosystem_name }}_init > artifacts/init_container.log 2>&1 || true && \
+            docker logs ${{ inputs.ecosystem_name }}_run > artifacts/run_container.log 2>&1 || true && \
+            docker cp ${{ inputs.ecosystem_name }}_init:/tmp/report-*.toml artifacts/ 2>/dev/null || true"
+          
+          # Copy all artifacts from remote to local
+          scp -r $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/
 
       - name: Upload artifacts
         if: always()
