@@ -88,13 +88,16 @@ jobs:
 
           # Run init container with log capture
           ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
+            mkdir -p tmp-data && \
             docker run --name ${{ inputs.ecosystem_name }}_init \
               --env-file .env \
               -v zksync-app-data:/app \
+              -v $PWD/tmp-data:/tmp \
               zk-sync-init 2>&1 | tee init.log || \
-            (docker cp ${{ inputs.ecosystem_name }}_init:/app/crash-reports/report-*.toml ./artifacts/ 2>/dev/null || true; \
-             docker logs ${{ inputs.ecosystem_name }}_init > init_crash.log 2>&1; \
-             docker inspect ${{ inputs.ecosystem_name }}_init > inspect.log 2>&1; \
+            (echo 'Container failed, collecting crash data...' && \
+             cp tmp-data/report-*.toml artifacts/ 2>/dev/null || true && \
+             docker logs ${{ inputs.ecosystem_name }}_init > init_crash.log 2>&1 && \
+             docker inspect ${{ inputs.ecosystem_name }}_init > inspect.log 2>&1 && \
              echo '=== Container Logs ==='; \
              cat init.log init_crash.log; \
              echo '=== Crash Report ==='; \
