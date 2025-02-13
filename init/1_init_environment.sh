@@ -29,7 +29,7 @@ if [ -z "${SET_AS_DEFAULT:-}" ]; then
 fi
 
 if [ -z "${CHAIN_ID:-}" ]; then
-	export CHAIN_ID=271
+	export CHAIN_ID=53151462
 fi
 
 if [ -z "${L1_BATCH_COMMIT_DATA_GENERATOR_MODE:-}" ]; then
