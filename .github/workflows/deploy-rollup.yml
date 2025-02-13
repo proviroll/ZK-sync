@@ -112,18 +112,22 @@ jobs:
               zk-sync-run"
 
       - name: Collect logs and config
+        if: always()  # Run even if previous steps failed
         env:
           HOST: ${{ secrets.DEPLOY_HOST }}
           USERNAME: ${{ secrets.DEPLOY_USERNAME }}
         run: |
           mkdir -p artifacts
           ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
-            docker logs ${{ inputs.ecosystem_name }}_init > init.log && \
-            docker logs ${{ inputs.ecosystem_name }}_run > run.log"
-          scp $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/*.log artifacts/
-          scp -r $USERNAME@$HOST:/app/${{ inputs.ecosystem_name }}/config artifacts/
+            cp *.log artifacts/ 2>/dev/null || true; \
+            cp *.toml artifacts/ 2>/dev/null || true; \
+            cp crash-report.toml artifacts/ 2>/dev/null || true; \
+            docker logs ${{ inputs.ecosystem_name }}_init > artifacts/init_container.log 2>&1 || true; \
+            docker logs ${{ inputs.ecosystem_name }}_run > artifacts/run_container.log 2>&1 || true"
+          scp -r $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/ || true
 
       - name: Upload artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: zksync-deployment-${{ env.BRANCH_NAME }}
