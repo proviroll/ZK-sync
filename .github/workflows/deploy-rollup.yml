@@ -86,21 +86,18 @@ jobs:
           L1_FAUCET_PRIVATE_KEY=${{ secrets.L1_FAUCET_PRIVATE_KEY }}
           EOL"
 
-          # Run init container with different error handling
+          # Run init container and capture its ID
           ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
             docker run --name ${{ inputs.ecosystem_name }}_init \
               --env-file .env \
               -v zksync-app-data:/app \
               zk-sync-init || \
-            docker cp ${{ inputs.ecosystem_name }}_init:/tmp/report-*.toml ./crash-report.toml"
-
-          # If the container failed, fetch and display the crash report
-          if [ $? -ne 0 ]; then
-            echo "Container failed. Retrieving crash report..."
-            scp $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/crash-report.toml ./
-            cat crash-report.toml
-            exit 1
-          fi
+            (REPORT=\$(docker exec ${{ inputs.ecosystem_name }}_init find /tmp -name 'report-*.toml') && \
+             if [ ! -z \"\$REPORT\" ]; then \
+               docker cp ${{ inputs.ecosystem_name }}_init:\$REPORT ./crash-report.toml; \
+               cat ./crash-report.toml; \
+             fi; \
+             exit 1)"
 
           # Run the run container
           ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
