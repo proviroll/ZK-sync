@@ -23,7 +23,13 @@ cd /app
 # Add error handling for the failing script
 if ! /script/3_create_ecosystem.sh; then
     echo "zkstack crashed. Here is the crash report:"
-    cat /tmp/report-*.toml || echo "No crash report found."
+    mkdir -p /app/crash-reports
+    if [ -f /tmp/report-*.toml ]; then
+        cp /tmp/report-*.toml /app/crash-reports/
+        cat /app/crash-reports/report-*.toml
+    else
+        echo "No crash report found."
+    fi
     exit 1
 fi
 
