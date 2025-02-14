@@ -32,7 +32,7 @@ on:
         options:
           - gpu
           - cpu
-        default: 'gpu'
+        default: 'cpu'
 
 jobs:
   deploy:
@@ -91,56 +91,56 @@ jobs:
           L1_FAUCET_PRIVATE_KEY=${{ secrets.L1_FAUCET_PRIVATE_KEY }}
           EOL"
 
-          # Run init container with log capture
-          ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
-            mkdir -p tmp-data && \
-            docker run --name ${{ inputs.ecosystem_name }}_init \
-              --env-file .env \
-              -v zksync-app-data:/app \
-              -v $PWD/tmp-data:/tmp \
-              zk-sync-init 2>&1 | tee init.log || \
-            (echo 'Container failed, collecting crash data...' && \
-             cp tmp-data/report-*.toml artifacts/ 2>/dev/null || true && \
-             docker logs ${{ inputs.ecosystem_name }}_init > init_crash.log 2>&1 && \
-             docker inspect ${{ inputs.ecosystem_name }}_init > inspect.log 2>&1 && \
-             echo '=== Container Logs ==='; \
-             cat init.log init_crash.log; \
-             echo '=== Crash Report ==='; \
-             cat artifacts/report-*.toml 2>/dev/null || echo 'No crash report found'; \
-             echo '=== Container Inspection ==='; \
-             cat inspect.log; \
-             exit 1)"
+    #       # Run init container with log capture
+    #       ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
+    #         mkdir -p tmp-data && \
+    #         docker run --name ${{ inputs.ecosystem_name }}_init \
+    #           --env-file .env \
+    #           -v zksync-app-data:/app \
+    #           -v $PWD/tmp-data:/tmp \
+    #           zk-sync-init 2>&1 | tee init.log || \
+    #         (echo 'Container failed, collecting crash data...' && \
+    #          cp tmp-data/report-*.toml artifacts/ 2>/dev/null || true && \
+    #          docker logs ${{ inputs.ecosystem_name }}_init > init_crash.log 2>&1 && \
+    #          docker inspect ${{ inputs.ecosystem_name }}_init > inspect.log 2>&1 && \
+    #          echo '=== Container Logs ==='; \
+    #          cat init.log init_crash.log; \
+    #          echo '=== Crash Report ==='; \
+    #          cat artifacts/report-*.toml 2>/dev/null || echo 'No crash report found'; \
+    #          echo '=== Container Inspection ==='; \
+    #          cat inspect.log; \
+    #          exit 1)"
 
-          # Run the run container
-          ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
-            docker run -d --network=host \
-              --volumes-from=${{ inputs.ecosystem_name }}_init \
-              --name ${{ inputs.ecosystem_name }}_run \
-              --env-file .env \
-              zk-sync-run"
+    #       # Run the run container
+    #       ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
+    #         docker run -d --network=host \
+    #           --volumes-from=${{ inputs.ecosystem_name }}_init \
+    #           --name ${{ inputs.ecosystem_name }}_run \
+    #           --env-file .env \
+    #           zk-sync-run"
 
-      - name: Collect logs and config
-        if: always()  # Run even if previous steps failed
-        env:
-          HOST: ${{ secrets.DEPLOY_HOST }}
-          USERNAME: ${{ secrets.DEPLOY_USERNAME }}
-        run: |
-          # Create artifacts directories on both local and remote
-          mkdir -p artifacts
-          ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
-            mkdir -p artifacts && \
-            cp *.log artifacts/ 2>/dev/null || true && \
-            cp *.toml artifacts/ 2>/dev/null || true && \
-            docker logs ${{ inputs.ecosystem_name }}_init > artifacts/init_container.log 2>&1 || true && \
-            docker logs ${{ inputs.ecosystem_name }}_run > artifacts/run_container.log 2>&1 || true && \
-            docker cp ${{ inputs.ecosystem_name }}_init:/tmp/report-*.toml artifacts/ 2>/dev/null || true"
+    #   - name: Collect logs and config
+    #     if: always()  # Run even if previous steps failed
+    #     env:
+    #       HOST: ${{ secrets.DEPLOY_HOST }}
+    #       USERNAME: ${{ secrets.DEPLOY_USERNAME }}
+    #     run: |
+    #       # Create artifacts directories on both local and remote
+    #       mkdir -p artifacts
+    #       ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
+    #         mkdir -p artifacts && \
+    #         cp *.log artifacts/ 2>/dev/null || true && \
+    #         cp *.toml artifacts/ 2>/dev/null || true && \
+    #         docker logs ${{ inputs.ecosystem_name }}_init > artifacts/init_container.log 2>&1 || true && \
+    #         docker logs ${{ inputs.ecosystem_name }}_run > artifacts/run_container.log 2>&1 || true && \
+    #         docker cp ${{ inputs.ecosystem_name }}_init:/tmp/report-*.toml artifacts/ 2>/dev/null || true"
           
-          # Copy all artifacts from remote to local
-          scp -r $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/
+    #       # Copy all artifacts from remote to local
+    #       scp -r $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/
 
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zksync-deployment-${{ env.BRANCH_NAME }}
-          path: artifacts/
+    #   - name: Upload artifacts
+    #     if: always()
+    #     uses: actions/upload-artifact@v4
+    #     with:
+    #       name: zksync-deployment-${{ env.BRANCH_NAME }}
+    #       path: artifacts/
