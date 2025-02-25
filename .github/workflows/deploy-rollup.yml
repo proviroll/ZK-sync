@@ -48,11 +48,13 @@ jobs:
           git checkout -b $BRANCH_NAME
 
       - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+            ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+  
+      - name: Add known hosts
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "${{ secrets.REMOTE_HOST }}" >> ~/.ssh/known_hosts
+            mkdir -p ~/.ssh
 
       - name: Copy files to remote host
         run: |
