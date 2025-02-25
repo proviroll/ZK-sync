@@ -1,4 +1,4 @@
-name: Deploy ZKStack Rollup
+name: Deploy ZKSync Environment
 
 permissions:
   contents: write
@@ -11,33 +11,27 @@ on:
         description: 'Ecosystem Name'
         required: true
         type: string
-        default: 'provi'
       chain_name:
         description: 'Chain Name'
         required: true
         type: string
-        default: 'proviTestnet'
+      chain_id:
+        description: 'Chain ID'
+        required: true
+        type: string
+        default: '271'
       l1_network:
-        description: 'L1 Network'
+        description: 'L1 Network (e.g., sepolia)'
         required: true
         type: choice
         options:
           - sepolia
           - mainnet
         default: 'sepolia'
-      prover_mode:
-        description: 'Prover Mode'
-        required: true
-        type: choice
-        options:
-          - gpu
-          - cpu
-        default: 'cpu'
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,93 +48,68 @@ jobs:
           git checkout -b $BRANCH_NAME
 
       - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to host
-        env:
-          HOST: ${{ secrets.DEPLOY_HOST }}
-          USERNAME: ${{ secrets.DEPLOY_USERNAME }}
+      - name: Copy files to remote host
         run: |
-          # Create deployment directory
-          ssh $USERNAME@$HOST "mkdir -p ~/zksync-deploy/${{ env.BRANCH_NAME }}"
+          ssh ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "mkdir -p ~/zksync-deploy/${{ env.BRANCH_NAME }}"
+          scp -r ./* ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/
 
-          # Copy files to host
-          scp -r ./* $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/
+      - name: Build and run initialization
+        run: |
+          ssh ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'ENDSSH'
+            cd ~/zksync-deploy/${{ env.BRANCH_NAME }}
+            
+            # Build the initialization container
+            docker build -t zksync-init ./init
+            
+            # Run the initialization container
+            docker run --rm \
+              --network host \
+              -v $(pwd):/app \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -e ECOSYSTEM_NAME="${{ inputs.ecosystem_name }}" \
+              -e CHAIN_NAME="${{ inputs.chain_name }}" \
+              -e CHAIN_ID="${{ inputs.chain_id }}" \
+              -e L1_NETWORK="${{ inputs.l1_network }}" \
+              -e PROVER_MODE="${{ inputs.prover_mode }}" \
+              -e FAUCET_ADDRESS="${{ secrets.L1_FAUCET_ADDRESS }}" \
+              -e FAUCET_PRIVATE_KEY="${{ secrets.L1_FAUCET_PRIVATE_KEY }}" \
+              -e L1_RPC_URL="${{ secrets.L1_RPC_URL }}" \
+              -e WALLET_PATH="/script/wallets.yaml" \
+              -e LINK_TO_CODE="/app/zksync" \
+              -e SET_AS_DEFAULT="true" \
+              -e L1_BATCH_COMMIT_DATA_GENERATOR_MODE="rollup" \
+              -e DEPLOY_ERC20="true" \
+              -e DEPLOY_ECOSYSTEM="true" \
+              -e OBSERVABILITY="false" \
+              -e DEPLOY_PAYMASTER="false" \
+              -e SERVER_DB_URL="${{ secrets.DB_URL }}" \
+              -e SERVER_DB_NAME="zksync_server_${L1_NETWORK}_${ECOSYSTEM_NAME}" \
+              zksync-init
 
-          # Build Docker images
-          ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
-            docker build -t zk-sync-init ./init && \
-            docker build -t zk-sync-run ./run"
+            # Print the generated wallets
+            echo "Generated Wallets:"
+            cat /script/wallets.yaml
 
-          # Create .env file on the host
-          ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && cat > .env << EOL
-          ECOSYSTEM_NAME=${{ inputs.ecosystem_name }}
-          CHAIN_NAME=${{ inputs.chain_name }}
-          WALLET_PATH=/script/wallets.yaml
-          PROVER_MODE=${{ inputs.prover_mode }}
-          L1_NETWORK=${{ inputs.l1_network }}
-          LINK_TO_CODE=/app/zksync
-          L1_FAUCET_ADDRESS=${{ secrets.L1_FAUCET_ADDRESS }}
-          L1_FAUCET_PRIVATE_KEY=${{ secrets.L1_FAUCET_PRIVATE_KEY }}
-          EOL"
+            # Copy wallets to artifacts
+            mkdir -p artifacts
+            cp /script/wallets.yaml artifacts/
+          ENDSSH
 
-    #       # Run init container with log capture
-    #       ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
-    #         mkdir -p tmp-data && \
-    #         docker run --name ${{ inputs.ecosystem_name }}_init \
-    #           --env-file .env \
-    #           -v zksync-app-data:/app \
-    #           -v $PWD/tmp-data:/tmp \
-    #           zk-sync-init 2>&1 | tee init.log || \
-    #         (echo 'Container failed, collecting crash data...' && \
-    #          cp tmp-data/report-*.toml artifacts/ 2>/dev/null || true && \
-    #          docker logs ${{ inputs.ecosystem_name }}_init > init_crash.log 2>&1 && \
-    #          docker inspect ${{ inputs.ecosystem_name }}_init > inspect.log 2>&1 && \
-    #          echo '=== Container Logs ==='; \
-    #          cat init.log init_crash.log; \
-    #          echo '=== Crash Report ==='; \
-    #          cat artifacts/report-*.toml 2>/dev/null || echo 'No crash report found'; \
-    #          echo '=== Container Inspection ==='; \
-    #          cat inspect.log; \
-    #          exit 1)"
+      - name: Save wallets
+        run: |
+          mkdir -p artifacts
+          scp ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/
 
-    #       # Run the run container
-    #       ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
-    #         docker run -d --network=host \
-    #           --volumes-from=${{ inputs.ecosystem_name }}_init \
-    #           --name ${{ inputs.ecosystem_name }}_run \
-    #           --env-file .env \
-    #           zk-sync-run"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zksync-wallets-${{ env.BRANCH_NAME }}
+          path: artifacts/
 
-    #   - name: Collect logs and config
-    #     if: always()  # Run even if previous steps failed
-    #     env:
-    #       HOST: ${{ secrets.DEPLOY_HOST }}
-    #       USERNAME: ${{ secrets.DEPLOY_USERNAME }}
-    #     run: |
-    #       # Create artifacts directories on both local and remote
-    #       mkdir -p artifacts
-    #       ssh $USERNAME@$HOST "cd ~/zksync-deploy/${{ env.BRANCH_NAME }} && \
-    #         mkdir -p artifacts && \
-    #         cp *.log artifacts/ 2>/dev/null || true && \
-    #         cp *.toml artifacts/ 2>/dev/null || true && \
-    #         docker logs ${{ inputs.ecosystem_name }}_init > artifacts/init_container.log 2>&1 || true && \
-    #         docker logs ${{ inputs.ecosystem_name }}_run > artifacts/run_container.log 2>&1 || true && \
-    #         docker cp ${{ inputs.ecosystem_name }}_init:/tmp/report-*.toml artifacts/ 2>/dev/null || true"
-          
-    #       # Copy all artifacts from remote to local
-    #       scp -r $USERNAME@$HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/
-
-    #   - name: Upload artifacts
-    #     if: always()
-    #     uses: actions/upload-artifact@v4
-    #     with:
-    #       name: zksync-deployment-${{ env.BRANCH_NAME }}
-    #       path: artifacts/
+   
