@@ -74,8 +74,11 @@ jobs:
           ssh ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} << 'ENDSSH'
             cd ~/zksync-deploy/${{ env.BRANCH_NAME }}
             
-            # Create .env file
-            cat > .env << EOF
+            # Create artifacts directory
+            mkdir -p artifacts
+            
+            # Create .env file in docker-compose directory
+            cat > docker-compose/.env << EOF
             ECOSYSTEM_NAME="${{ inputs.ecosystem_name }}"
             CHAIN_NAME="${{ inputs.chain_name }}"
             CHAIN_ID="${{ inputs.chain_id }}"
@@ -87,13 +90,16 @@ jobs:
             POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
             EOF
 
+            # Change to docker-compose directory before running docker-compose commands
+            cd docker-compose
+            
             # Build and start services using docker-compose
             docker-compose --profile init up --build -d
 
             # Wait for initialization to complete and copy wallets
-            mkdir -p artifacts
-            if [ -f /script/wallets.yaml ]; then
-              cp /script/wallets.yaml artifacts/
+            cd ..
+            if [ -f docker-compose/script/wallets.yaml ]; then
+              cp docker-compose/script/wallets.yaml artifacts/
             fi
           ENDSSH
 
