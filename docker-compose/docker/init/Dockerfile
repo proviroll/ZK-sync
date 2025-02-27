@@ -22,16 +22,14 @@ RUN apt-get update && apt-get install -y \
     apt-transport-https \
     ca-certificates \
     gnupg \
-    lsb-release \
-    && rm -rf /var/lib/apt/lists/*
+    lsb-release
 
 # Install Docker
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
     $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
     apt-get update && \
-    apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
 # Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -39,11 +37,9 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install Node.js and yarn
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get update \
     && apt-get install -y nodejs \
     && npm install -g yarn \
-    && yarn set version 1.22.19 \
-    && rm -rf /var/lib/apt/lists/*
+    && yarn set version 1.22.19
 
 # Install Cargo tools
 RUN cargo install cargo-nextest \

@@ -43,7 +43,7 @@ services:
       - CHAIN_NAME=${CHAIN_NAME}
       - CHAIN_ID=${CHAIN_ID}
       - L1_NETWORK=${L1_NETWORK}
-      - LINK_TO_CODE=${LINK_TO_CODE:-/zksync}
+      - LINK_TO_CODE=${LINK_TO_CODE:-}
       - WALLET_PATH=/script/wallets.yaml
       
       # Database Configuration
