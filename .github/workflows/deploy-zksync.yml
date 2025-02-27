@@ -77,7 +77,11 @@ jobs:
             # Create artifacts directory
             mkdir -p artifacts
             
-            # Create .env file 
+            # Create .env file in docker-compose directory
+            mkdir -p docker-compose/script
+            chmod 777 docker-compose/script  # Ensure write permissions
+            
+            # Create .env file without using heredoc
             echo "ECOSYSTEM_NAME=\"${{ inputs.ecosystem_name }}\"" > docker-compose/.env
             echo "CHAIN_NAME=\"${{ inputs.chain_name }}\"" >> docker-compose/.env
             echo "CHAIN_ID=\"${{ inputs.chain_id }}\"" >> docker-compose/.env
@@ -96,8 +100,8 @@ jobs:
 
             # Wait for initialization to complete and copy wallets
             cd ..
-            if [ -f docker-compose/wallets.yaml ]; then
-              cp docker-compose/wallets.yaml artifacts/
+            if [ -f docker-compose/script/wallets.yaml ]; then
+              cp docker-compose/script/wallets.yaml artifacts/
             fi
           ENDSSH
 
