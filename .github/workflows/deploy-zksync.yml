@@ -70,41 +70,27 @@ jobs:
           ssh ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'ENDSSH'
             cd ~/zksync-deploy/${{ env.BRANCH_NAME }}
             
-            # Build the initialization container
-            docker build -t zksync-init ./init
-            
-            # Run the initialization container
-            docker run --rm \
-              --network host \
-              -v $(pwd):/app \
-              -v /var/run/docker.sock:/var/run/docker.sock \
-              -e ECOSYSTEM_NAME="${{ inputs.ecosystem_name }}" \
-              -e CHAIN_NAME="${{ inputs.chain_name }}" \
-              -e CHAIN_ID="${{ inputs.chain_id }}" \
-              -e L1_NETWORK="${{ inputs.l1_network }}" \
-              -e PROVER_MODE="${{ inputs.prover_mode }}" \
-              -e FAUCET_ADDRESS="${{ secrets.L1_FAUCET_ADDRESS }}" \
-              -e FAUCET_PRIVATE_KEY="${{ secrets.L1_FAUCET_PRIVATE_KEY }}" \
-              -e L1_RPC_URL="${{ secrets.L1_RPC_URL }}" \
-              -e WALLET_PATH="/script/wallets.yaml" \
-              -e LINK_TO_CODE="/app/zksync" \
-              -e SET_AS_DEFAULT="true" \
-              -e L1_BATCH_COMMIT_DATA_GENERATOR_MODE="rollup" \
-              -e DEPLOY_ERC20="true" \
-              -e DEPLOY_ECOSYSTEM="true" \
-              -e OBSERVABILITY="false" \
-              -e DEPLOY_PAYMASTER="false" \
-              -e SERVER_DB_URL="${{ secrets.DB_URL }}" \
-              -e SERVER_DB_NAME="zksync_server_${L1_NETWORK}_${ECOSYSTEM_NAME}" \
-              zksync-init
+            # Create .env file
+            cat > .env << EOF
+            ECOSYSTEM_NAME="${{ inputs.ecosystem_name }}"
+            CHAIN_NAME="${{ inputs.chain_name }}"
+            CHAIN_ID="${{ inputs.chain_id }}"
+            L1_NETWORK="${{ inputs.l1_network }}"
+            FAUCET_ADDRESS="${{ secrets.L1_FAUCET_ADDRESS }}"
+            FAUCET_PRIVATE_KEY="${{ secrets.L1_FAUCET_PRIVATE_KEY }}"
+            L1_RPC_URL="${{ secrets.L1_RPC_URL }}"
+            LINK_TO_CODE=""
+            POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+            EOF
 
-            # Print the generated wallets
-            echo "Generated Wallets:"
-            cat /script/wallets.yaml
+            # Build and start services using docker-compose
+            docker-compose --profile init up --build -d
 
-            # Copy wallets to artifacts
+            # Wait for initialization to complete and copy wallets
             mkdir -p artifacts
-            cp /script/wallets.yaml artifacts/
+            if [ -f /script/wallets.yaml ]; then
+              cp /script/wallets.yaml artifacts/
+            fi
           ENDSSH
 
       - name: Save wallets

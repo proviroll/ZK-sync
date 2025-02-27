@@ -43,7 +43,7 @@ services:
       - CHAIN_NAME=${CHAIN_NAME}
       - CHAIN_ID=${CHAIN_ID}
       - L1_NETWORK=${L1_NETWORK}
-      - LINK_TO_CODE=/zksync
+      - LINK_TO_CODE=${LINK_TO_CODE:-/zksync}
       - WALLET_PATH=/script/wallets.yaml
       
       # Database Configuration
@@ -75,6 +75,7 @@ services:
       - PRIORITY_GAS_PRICE=${PRIORITY_GAS_PRICE:-10000}
       - FAUCET_AMOUNT_ETH=${FAUCET_AMOUNT_ETH:-6}
     volumes:
+      - ~/zksync-deploy/wallets.yaml:/script/wallets.yaml:rw
       - zksync_data:/zksync:rw
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
