@@ -75,8 +75,9 @@ services:
       - PRIORITY_GAS_PRICE=${PRIORITY_GAS_PRICE:-10000}
       - FAUCET_AMOUNT_ETH=${FAUCET_AMOUNT_ETH:-6}
     volumes:
-      - zksync_data:/zksync:rw
+      - zksync_data:/app:rw
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./script:/script:rw
     networks:
       - zksync-net
     profiles:

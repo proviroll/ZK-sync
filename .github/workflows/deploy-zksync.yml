@@ -71,12 +71,12 @@ jobs:
           ssh ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} << 'ENDSSH'
             cd ~/zksync-deploy/${{ env.BRANCH_NAME }}
             
+            # Create script directory with proper permissions
+            mkdir -p docker-compose/script
+            chmod 777 docker-compose/script
+
             # Create artifacts directory
             mkdir -p artifacts
-            
-            # Create .env file in docker-compose directory
-            mkdir -p docker-compose/script
-            chmod 777 docker-compose/script  # Ensure write permissions
             
             # Create .env file without using heredoc
             echo "ECOSYSTEM_NAME=\"${{ inputs.ecosystem_name }}\"" > docker-compose/.env
@@ -95,9 +95,16 @@ jobs:
             # Build and start services using docker-compose
             docker-compose --profile init up --build -d
 
-            # Wait for initialization to complete and copy wallets
-            cd ..
+            # Wait for the container to finish and check its logs
+            echo "Waiting for initialization to complete..."
+            while docker ps | grep -q zksync-init; do
+              sleep 10
+              echo "Still waiting for initialization..."
+            done
+
+            # After container finishes, the wallets.yaml will be in docker-compose/script/
             if [ -f docker-compose/script/wallets.yaml ]; then
+              mkdir -p artifacts
               cp docker-compose/script/wallets.yaml artifacts/
             fi
           ENDSSH
@@ -105,7 +112,10 @@ jobs:
       - name: Save wallets
         run: |
           mkdir -p artifacts
-          scp ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/
+          # Only attempt to copy if remote artifacts directory is not empty
+          ssh ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} "[ -d ~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts ] && [ \"\$(ls -A ~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts)\" ] && exit 0 || exit 1" && \
+          scp ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/ || \
+          echo "No artifacts to copy"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
