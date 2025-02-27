@@ -59,6 +59,7 @@ jobs:
       - name: Add known hosts
         run: |
             mkdir -p ~/.ssh
+            ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
       - name: Copy files to remote host
         run: |
@@ -99,7 +100,7 @@ jobs:
       - name: Save wallets
         run: |
           mkdir -p artifacts
-          scp ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/
+          scp ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
