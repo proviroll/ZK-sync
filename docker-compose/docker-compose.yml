@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for ZKSync
+  postgres:
+    image: postgres:15
+    container_name: zksync-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mysecretpassword}
+      POSTGRES_DB: zksync_server_${L1_NETWORK}_${ECOSYSTEM_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s  
+    networks:
+      - zksync-net
+    profiles:
+      - zksync
+      - init
+
+
+  # ZKSync initialization container
+  zksync-init:
+    build:
+      context: ./docker/init
+      dockerfile: Dockerfile
+    container_name: zksync-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # System Configuration
+      - ECOSYSTEM_NAME=${ECOSYSTEM_NAME}
+      - CHAIN_NAME=${CHAIN_NAME}
+      - CHAIN_ID=${CHAIN_ID}
+      - L1_NETWORK=${L1_NETWORK}
+      - LINK_TO_CODE=/zksync
+      - WALLET_PATH=/script/wallets.yaml
+      
+      # Database Configuration
+      - SERVER_DB_URL=postgres://postgres:${POSTGRES_PASSWORD:-mysecretpassword}@postgres:5432
+      - SERVER_DB_NAME=zksync_server_${L1_NETWORK}_${ECOSYSTEM_NAME}
+      
+      # Network Configuration
+      - L1_RPC_URL=${L1_RPC_URL}
+      - FAUCET_ADDRESS=${FAUCET_ADDRESS}
+      - FAUCET_PRIVATE_KEY=${FAUCET_PRIVATE_KEY}
+      
+      # Deployment Configuration
+      - SET_AS_DEFAULT=true
+      - PROVER_MODE=gpu
+      - L1_BATCH_COMMIT_DATA_GENERATOR_MODE=rollup
+      - BASE_TOKEN_ADDRESS=0x0000000000000000000000000000000000000001
+      - BASE_TOKEN_PRICE_NOMINATOR=1
+      - BASE_TOKEN_PRICE_DENOMINATOR=1
+      - DEPLOY_ERC20=${DEPLOY_ERC20:-true}
+      - DEPLOY_ECOSYSTEM=${DEPLOY_ECOSYSTEM:-true}
+      - DEPLOY_PAYMASTER=${DEPLOY_PAYMASTER:-false}
+      - OBSERVABILITY=${OBSERVABILITY:-false}
+      
+      # Skip Flags
+      - SKIP_CREATE_ECOSYSTEM=${SKIP_CREATE_ECOSYSTEM:-false}
+      - SKIP_INIT_ECOSYSTEM=${SKIP_INIT_ECOSYSTEM:-false}
+      
+      # Performance Configuration
+      - PRIORITY_GAS_PRICE=${PRIORITY_GAS_PRICE:-10000}
+      - FAUCET_AMOUNT_ETH=${FAUCET_AMOUNT_ETH:-6}
+    volumes:
+      - zksync_data:/zksync:rw
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - zksync-net
+    profiles:
+      - init
+
+volumes:
+  postgres_data:
+    name: zksync-postgres-data
+  zksync_data:
+    name: zksync-data
+
+networks:
+  zksync-net:
+    name: zksync-network
+    driver: bridge
