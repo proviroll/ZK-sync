@@ -71,6 +71,13 @@ jobs:
           ssh ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} << 'ENDSSH'
             cd ~/zksync-deploy/${{ env.BRANCH_NAME }}
             
+            # Create necessary directories and copy scripts
+            mkdir -p docker-compose/docker/init
+            cp docker-compose/docker/init/entrypoint.sh docker-compose/docker/init/
+            cp docker-compose/docker/init/generate_wallets.sh docker-compose/docker/init/
+            cp docker-compose/docker/init/provision_wallets.sh docker-compose/docker/init/
+            chmod +x docker-compose/docker/init/*.sh
+            
             # Create script directory with proper permissions
             mkdir -p docker-compose/script
             chmod 777 docker-compose/script
