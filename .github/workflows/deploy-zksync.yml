@@ -77,18 +77,16 @@ jobs:
             # Create artifacts directory
             mkdir -p artifacts
             
-            # Create .env file in docker-compose directory
-            cat > docker-compose/.env << EOF
-            ECOSYSTEM_NAME="${{ inputs.ecosystem_name }}"
-            CHAIN_NAME="${{ inputs.chain_name }}"
-            CHAIN_ID="${{ inputs.chain_id }}"
-            L1_NETWORK="${{ inputs.l1_network }}"
-            FAUCET_ADDRESS="${{ secrets.L1_FAUCET_ADDRESS }}"
-            FAUCET_PRIVATE_KEY="${{ secrets.L1_FAUCET_PRIVATE_KEY }}"
-            L1_RPC_URL="${{ secrets.L1_RPC_URL }}"
-            LINK_TO_CODE=""
-            POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
-            EOF
+            # Create .env file 
+            echo "ECOSYSTEM_NAME=\"${{ inputs.ecosystem_name }}\"" > docker-compose/.env
+            echo "CHAIN_NAME=\"${{ inputs.chain_name }}\"" >> docker-compose/.env
+            echo "CHAIN_ID=\"${{ inputs.chain_id }}\"" >> docker-compose/.env
+            echo "L1_NETWORK=\"${{ inputs.l1_network }}\"" >> docker-compose/.env
+            echo "FAUCET_ADDRESS=\"${{ secrets.L1_FAUCET_ADDRESS }}\"" >> docker-compose/.env
+            echo "FAUCET_PRIVATE_KEY=\"${{ secrets.L1_FAUCET_PRIVATE_KEY }}\"" >> docker-compose/.env
+            echo "L1_RPC_URL=\"${{ secrets.L1_RPC_URL }}\"" >> docker-compose/.env
+            echo "LINK_TO_CODE=\"\"" >> docker-compose/.env
+            echo "POSTGRES_PASSWORD=\"${{ secrets.POSTGRES_PASSWORD }}\"" >> docker-compose/.env
 
             # Change to docker-compose directory before running docker-compose commands
             cd docker-compose
@@ -98,8 +96,8 @@ jobs:
 
             # Wait for initialization to complete and copy wallets
             cd ..
-            if [ -f docker-compose/script/wallets.yaml ]; then
-              cp docker-compose/script/wallets.yaml artifacts/
+            if [ -f docker-compose/wallets.yaml ]; then
+              cp docker-compose/wallets.yaml artifacts/
             fi
           ENDSSH
 
