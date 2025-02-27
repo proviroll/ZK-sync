@@ -70,17 +70,6 @@ jobs:
         run: |
           ssh ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} << 'ENDSSH'
             cd ~/zksync-deploy/${{ env.BRANCH_NAME }}
-            
-            # Create necessary directories and copy scripts
-            mkdir -p docker-compose/docker/init
-            cp docker-compose/docker/init/entrypoint.sh docker-compose/docker/init/
-            cp docker-compose/docker/init/generate_wallets.sh docker-compose/docker/init/
-            cp docker-compose/docker/init/provision_wallets.sh docker-compose/docker/init/
-            chmod +x docker-compose/docker/init/*.sh
-            
-            # Create script directory with proper permissions
-            mkdir -p docker-compose/script
-            chmod 777 docker-compose/script
 
             # Create artifacts directory
             mkdir -p artifacts
@@ -99,7 +88,10 @@ jobs:
             # Change to docker-compose directory before running docker-compose commands
             cd docker-compose
             
-            # Build and start services using docker-compose
+            # Add debug output
+            echo "Listing files in ../init:"
+            ls -la ../init
+            
             docker-compose --profile init up --build && docker-compose --profile init logs -f zksync-init
 
             # Wait for the container to finish and check its logs

@@ -65,9 +65,7 @@ RUN cargo install --git https://github.com/matter-labs/zksync-era/ --locked zkst
 ENV ZKSYNC_USE_CUDA_STUBS=true
 
 # Create necessary directories
-RUN mkdir -p /script
-COPY *.sh /script/
-RUN chmod +x /script/*.sh
+RUN mkdir -p /script /app /zksync
 
 WORKDIR /app
 ENTRYPOINT ["/script/entrypoint.sh"]
