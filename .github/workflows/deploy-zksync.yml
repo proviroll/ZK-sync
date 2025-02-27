@@ -62,8 +62,8 @@ jobs:
 
       - name: Copy files to remote host
         env:
-          REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.DEPLOY_USERNAME }}
+          REMOTE_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           ssh "$REMOTE_USER@$REMOTE_HOST" "mkdir -p ~/zksync-deploy/${{ env.BRANCH_NAME }}"
           scp -r ./* "$REMOTE_USER@$REMOTE_HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/"
