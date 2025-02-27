@@ -61,19 +61,16 @@ jobs:
             mkdir -p ~/.ssh
 
       - name: Copy files to remote host
+        run: |
+          ssh ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} "mkdir -p ~/zksync-deploy/${{ env.BRANCH_NAME }}"
+          scp -r ./* ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/
+
+      - name: Build and run initialization
         env:
           REMOTE_USER: ${{ secrets.DEPLOY_USERNAME }}
           REMOTE_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
-          ssh "$REMOTE_USER@$REMOTE_HOST" "mkdir -p ~/zksync-deploy/${{ env.BRANCH_NAME }}"
-          scp -r ./* "$REMOTE_USER@$REMOTE_HOST:~/zksync-deploy/${{ env.BRANCH_NAME }}/"
-
-      - name: Build and run initialization
-        env:
-          REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-        run: |
-          ssh "$REMOTE_USER@$REMOTE_HOST" << 'ENDSSH'
+          ssh ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} << 'ENDSSH'
             cd ~/zksync-deploy/${{ env.BRANCH_NAME }}
             
             # Create .env file
