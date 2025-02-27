@@ -64,10 +64,6 @@ RUN cargo install --git https://github.com/matter-labs/zksync-era/ --locked zkst
 # Set environment variable for non-CUDA setup
 ENV ZKSYNC_USE_CUDA_STUBS=true
 
-# Configure git for HTTPS
-RUN git config --global url."https://github.com/".insteadOf git@github.com: && \
-    git config --global url."https://".insteadOf git://
-
 # Create necessary directories
 RUN mkdir -p /app /script /zksync
 
