@@ -66,8 +66,8 @@ ENV ZKSYNC_USE_CUDA_STUBS=true
 
 # Create necessary directories
 RUN mkdir -p /app /script /zksync
-COPY entrypoint.sh generate_wallets.sh provision_wallets.sh /script/
-RUN chmod +x /script/entrypoint.sh /script/generate_wallets.sh /script/provision_wallets.sh
+COPY *.sh /script/
+RUN chmod +x /script/*.sh
 
 WORKDIR /app
 ENTRYPOINT ["/script/entrypoint.sh"]
