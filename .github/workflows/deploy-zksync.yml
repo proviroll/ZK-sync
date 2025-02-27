@@ -93,7 +93,7 @@ jobs:
             cd docker-compose
             
             # Build and start services using docker-compose
-            docker-compose --profile init up --build -d
+            docker-compose --profile init up --build && docker-compose --profile init logs -f zksync-init
 
             # Wait for the container to finish and check its logs
             echo "Waiting for initialization to complete..."
