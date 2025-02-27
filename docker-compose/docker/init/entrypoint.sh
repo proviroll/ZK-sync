@@ -1,35 +1,8 @@
 #!/bin/bash
 set -eu
 
-echo "[0/3] Generating & provisioning wallets..."
+echo "[1/3] Generating & provisioning wallets..."
 /script/provision_wallets.sh
-
-echo "[1/3] Setting up environment..."
-# Clean up existing directory contents without removing mount point
-if [ -d "$LINK_TO_CODE" ]; then
-    echo "Cleaning up existing zksync directory contents..."
-    find "$LINK_TO_CODE" -mindepth 1 -delete 2>/dev/null || true
-fi
-
-# Create temporary directory
-TEMP_DIR=$(mktemp -d)
-    
-# Clone fresh copy
-echo "Cloning zksync-era repository..."
-git clone https://github.com/matter-labs/zksync-era.git "$TEMP_DIR"
-    
-# Move contents to final location
-mkdir -p "$LINK_TO_CODE"
-cp -r "$TEMP_DIR"/* "$LINK_TO_CODE"/
-cp -r "$TEMP_DIR"/.git* "$LINK_TO_CODE"/
-    
-# Clean up temp directory
-rm -rf "$TEMP_DIR"
-    
-# Initialize submodules
-cd "$LINK_TO_CODE"
-git submodule update --init --recursive
-cd -
 
 echo "[2/3] Creating ecosystem..."
 # Create ecosystem
@@ -64,10 +37,6 @@ echo "[3/3] Initializing ecosystem..."
 # Initialize ecosystem
 cd "${ECOSYSTEM_NAME}"
 if [ "$SKIP_INIT_ECOSYSTEM" = "false" ]; then
-    # Clean up existing database
-    PGPASSWORD="${POSTGRES_PASSWORD:-mysecretpassword}" psql -h postgres -U postgres -c "DROP DATABASE IF EXISTS \"$SERVER_DB_NAME\";"
-    PGPASSWORD="${POSTGRES_PASSWORD:-mysecretpassword}" psql -h postgres -U postgres -c "CREATE DATABASE \"$SERVER_DB_NAME\";"
-
     zkstack ecosystem init \
         --deploy-erc20="$DEPLOY_ERC20" \
         --deploy-ecosystem="$DEPLOY_ECOSYSTEM" \

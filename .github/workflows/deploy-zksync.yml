@@ -1,0 +1,121 @@
+name: Deploy ZKSync Environment
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  push:
+    branches:
+      - main
+      - docker-compose-setup
+  workflow_dispatch:
+    inputs:
+      ecosystem_name:
+        description: 'Ecosystem Name'
+        required: true
+        type: string
+      chain_name:
+        description: 'Chain Name'
+        required: true
+        type: string
+      chain_id:
+        description: 'Chain ID'
+        required: true
+        type: string
+        default: '271'
+      l1_network:
+        description: 'L1 Network (e.g., sepolia)'
+        required: true
+        type: choice
+        options:
+          - sepolia
+          - mainnet
+        default: 'sepolia'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Create deployment branch
+        run: |
+          BRANCH_NAME="deploy-${{ inputs.ecosystem_name }}-${{ inputs.l1_network }}-$(date +%Y%m%d-%H%M%S)"
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+          git checkout -b $BRANCH_NAME
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+            ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+  
+      - name: Add known hosts
+        run: |
+            mkdir -p ~/.ssh
+
+      - name: Copy files to remote host
+        run: |
+          ssh ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "mkdir -p ~/zksync-deploy/${{ env.BRANCH_NAME }}"
+          scp -r ./* ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/
+
+      - name: Build and run initialization
+        run: |
+          ssh ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'ENDSSH'
+            cd ~/zksync-deploy/${{ env.BRANCH_NAME }}
+            
+            # Build the initialization container
+            docker build -t zksync-init ./init
+            
+            # Run the initialization container
+            docker run --rm \
+              --network host \
+              -v $(pwd):/app \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -e ECOSYSTEM_NAME="${{ inputs.ecosystem_name }}" \
+              -e CHAIN_NAME="${{ inputs.chain_name }}" \
+              -e CHAIN_ID="${{ inputs.chain_id }}" \
+              -e L1_NETWORK="${{ inputs.l1_network }}" \
+              -e PROVER_MODE="${{ inputs.prover_mode }}" \
+              -e FAUCET_ADDRESS="${{ secrets.L1_FAUCET_ADDRESS }}" \
+              -e FAUCET_PRIVATE_KEY="${{ secrets.L1_FAUCET_PRIVATE_KEY }}" \
+              -e L1_RPC_URL="${{ secrets.L1_RPC_URL }}" \
+              -e WALLET_PATH="/script/wallets.yaml" \
+              -e LINK_TO_CODE="/app/zksync" \
+              -e SET_AS_DEFAULT="true" \
+              -e L1_BATCH_COMMIT_DATA_GENERATOR_MODE="rollup" \
+              -e DEPLOY_ERC20="true" \
+              -e DEPLOY_ECOSYSTEM="true" \
+              -e OBSERVABILITY="false" \
+              -e DEPLOY_PAYMASTER="false" \
+              -e SERVER_DB_URL="${{ secrets.DB_URL }}" \
+              -e SERVER_DB_NAME="zksync_server_${L1_NETWORK}_${ECOSYSTEM_NAME}" \
+              zksync-init
+
+            # Print the generated wallets
+            echo "Generated Wallets:"
+            cat /script/wallets.yaml
+
+            # Copy wallets to artifacts
+            mkdir -p artifacts
+            cp /script/wallets.yaml artifacts/
+          ENDSSH
+
+      - name: Save wallets
+        run: |
+          mkdir -p artifacts
+          scp ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zksync-wallets-${{ env.BRANCH_NAME }}
+          path: artifacts/
+
+   
