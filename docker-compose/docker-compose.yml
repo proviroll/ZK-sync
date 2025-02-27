@@ -77,7 +77,6 @@ services:
     volumes:
       - zksync_data:/app:rw
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./script:/script:rw
     networks:
       - zksync-net
     profiles:
