@@ -92,7 +92,7 @@ jobs:
             echo "Listing files in ../init:"
             ls -la ../init
             
-            docker-compose --profile init up --build && docker-compose --profile init logs -f zksync-init
+            docker-compose --profile init up --build -d 
 
             # Wait for the container to finish and check its logs
             echo "Waiting for initialization to complete..."
