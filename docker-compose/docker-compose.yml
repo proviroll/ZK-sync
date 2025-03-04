@@ -24,6 +24,11 @@ services:
     profiles:
       - zksync
       - init
+    logging: &logging
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 
   # ZKSync initialization container
@@ -75,12 +80,42 @@ services:
       - PRIORITY_GAS_PRICE=${PRIORITY_GAS_PRICE:-10000}
       - FAUCET_AMOUNT_ETH=${FAUCET_AMOUNT_ETH:-6}
     volumes:
-      - /home/devops/zksync-execution/execution-${ECOSYSTEM_NAME}:/app:rw
+      - zksync_data:/zksync:rw
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - zksync-net
     profiles:
       - init
+    logging: *logging
+
+  # Promtail service
+  promtail:
+    image: grafana/promtail:latest
+    container_name: zksync-promtail
+    command:
+      - -config.file=/etc/promtail/config.yml
+      - -config.expand-env=true
+    environment:
+      - ECOSYSTEM_NAME=${ECOSYSTEM_NAME}
+      - L1_NETWORK=${L1_NETWORK}
+      - LOKI_URL=${LOKI_URL}
+      - LOKI_USERNAME=${LOKI_USERNAME}
+      - LOKI_PASSWORD=${LOKI_PASSWORD}
+    env_file:
+      - .env
+    networks:
+      - zksync-net
+    profiles:
+      - zksync
+      - init
+    logging: *logging
+    user: root
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   postgres_data:
