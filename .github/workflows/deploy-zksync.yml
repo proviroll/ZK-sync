@@ -7,12 +7,16 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      ecosystem_name:
-        description: 'Ecosystem Name'
+      settlement_layer:
+        description: 'Settlement Layer'
         required: true
         type: string
-      chain_name:
-        description: 'Chain Name'
+      data_availability:
+        description: 'Data Availability Layer'
+        required: true
+        type: string
+      rollup_name:
+        description: 'Rollup Name'
         required: true
         type: string
       chain_id:
@@ -41,7 +45,7 @@ jobs:
 
       - name: Create deployment branch
         run: |
-          BRANCH_NAME="deploy-${{ inputs.ecosystem_name }}-${{ inputs.l1_network }}-$(date +%Y%m%d-%H%M%S)"
+          BRANCH_NAME="deploy-${{ inputs.rollup_name }}-${{ inputs.l1_network }}-$(date +%Y%m%d-%H%M%S)"
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
           git checkout -b $BRANCH_NAME
 
@@ -72,8 +76,8 @@ jobs:
             mkdir -p artifacts
             
             # Create .env file without using heredoc
-            echo "ECOSYSTEM_NAME=\"${{ inputs.ecosystem_name }}\"" > docker-compose/.env
-            echo "CHAIN_NAME=\"${{ inputs.chain_name }}\"" >> docker-compose/.env
+            echo "ECOSYSTEM_NAME=\"${{ inputs.rollup_name }}_ecosystem\"" > docker-compose/.env
+            echo "CHAIN_NAME=\"${{ inputs.rollup_name }}\"" >> docker-compose/.env
             echo "CHAIN_ID=\"${{ inputs.chain_id }}\"" >> docker-compose/.env
             echo "L1_NETWORK=\"${{ inputs.l1_network }}\"" >> docker-compose/.env
             echo "FAUCET_ADDRESS=\"${{ secrets.L1_FAUCET_ADDRESS }}\"" >> docker-compose/.env
