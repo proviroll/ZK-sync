@@ -1,0 +1,126 @@
+name: Deploy ZKSync Environment
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      settlement_layer:
+        description: 'Settlement Layer'
+        required: true
+        type: string
+      data_availability:
+        description: 'Data Availability Layer'
+        required: true
+        type: string
+      rollup_name:
+        description: 'Rollup Name'
+        required: true
+        type: string
+      chain_id:
+        description: 'Chain ID'
+        required: true
+        type: string
+        default: '271'
+      l1_network:
+        description: 'L1 Network (e.g., sepolia)'
+        required: true
+        type: string
+        default: 'sepolia'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Create deployment branch
+        run: |
+          BRANCH_NAME="deploy-${{ inputs.rollup_name }}-${{ inputs.l1_network }}-$(date +%Y%m%d-%H%M%S)"
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+          git checkout -b $BRANCH_NAME
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+            ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+  
+      - name: Add known hosts
+        run: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy files to remote host
+        run: |
+          ssh ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} "mkdir -p ~/zksync-deploy/${{ env.BRANCH_NAME }}"
+          scp -r ./* ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/
+
+      - name: Build and run initialization
+        env:
+          REMOTE_USER: ${{ secrets.DEPLOY_USERNAME }}
+          REMOTE_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          ssh ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} << 'ENDSSH'
+            cd ~/zksync-deploy/${{ env.BRANCH_NAME }}
+
+            # Create artifacts directory
+            mkdir -p artifacts
+            
+            # Create .env file without using heredoc
+            echo "ECOSYSTEM_NAME=\"${{ inputs.rollup_name }}_ecosystem\"" > docker-compose/.env
+            echo "CHAIN_NAME=\"${{ inputs.rollup_name }}\"" >> docker-compose/.env
+            echo "CHAIN_ID=\"${{ inputs.chain_id }}\"" >> docker-compose/.env
+            echo "L1_NETWORK=\"${{ inputs.l1_network }}\"" >> docker-compose/.env
+            echo "FAUCET_ADDRESS=\"${{ secrets.L1_FAUCET_ADDRESS }}\"" >> docker-compose/.env
+            echo "FAUCET_PRIVATE_KEY=\"${{ secrets.L1_FAUCET_PRIVATE_KEY }}\"" >> docker-compose/.env
+            echo "L1_RPC_URL=\"${{ secrets.L1_RPC_URL }}\"" >> docker-compose/.env
+            echo "LINK_TO_CODE=\"\"" >> docker-compose/.env
+            echo "POSTGRES_PASSWORD=\"${{ secrets.POSTGRES_PASSWORD }}\"" >> docker-compose/.env
+
+            # Change to docker-compose directory before running docker-compose commands
+            cd docker-compose
+            
+            # Add debug output
+            echo "Listing files in ../init:"
+            ls -la ../init
+            
+            docker-compose --profile init up --build -d 
+
+            # Wait for the container to finish and check its logs
+            echo "Waiting for initialization to complete..."
+            while docker ps | grep -q zksync-init; do
+              sleep 10
+              echo "Still waiting for initialization..."
+            done
+
+            # After container finishes, the wallets.yaml will be in docker-compose/script/
+            if [ -f docker-compose/script/wallets.yaml ]; then
+              mkdir -p artifacts
+              cp docker-compose/script/wallets.yaml artifacts/
+            fi
+          ENDSSH
+
+      - name: Save wallets
+        run: |
+          mkdir -p artifacts
+          # Only attempt to copy if remote artifacts directory is not empty
+          ssh ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }} "[ -d ~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts ] && [ \"\$(ls -A ~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts)\" ] && exit 0 || exit 1" && \
+          scp ${{ secrets.DEPLOY_USERNAME }}@${{ secrets.DEPLOY_HOST }}:~/zksync-deploy/${{ env.BRANCH_NAME }}/artifacts/* artifacts/ || \
+          echo "No artifacts to copy"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zksync-wallets-${{ env.BRANCH_NAME }}
+          path: artifacts/
+
+   
